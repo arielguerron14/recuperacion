@@ -122,7 +122,11 @@ resource "aws_launch_template" "app" {
   image_id      = data.aws_ami.amazon_linux.id
   instance_type = var.instance_type
 
-  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+  network_interfaces {
+    device_index                = 0
+    associate_public_ip_address = true
+    security_groups             = [aws_security_group.ec2_sg.id]
+  }
 
   user_data = base64encode(templatefile("${path.module}/user_data.sh.tpl", { repo_url = var.repo_url }))
 
