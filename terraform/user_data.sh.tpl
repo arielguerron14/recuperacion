@@ -17,7 +17,7 @@ cd /home/ec2-user
 REPO_URL="${repo_url}"
 
 if [ ! -d app ]; then
-  sudo -u ec2-user git clone "${REPO_URL}" app || true
+  sudo -u ec2-user git clone "$REPO_URL" app || true
 else
   cd app || exit 0
   sudo -u ec2-user git pull || true

@@ -16,8 +16,11 @@ data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnet_ids" "default" {
-  vpc_id = data.aws_vpc.default.id
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
 }
 
 data "aws_ami" "amazon_linux" {
@@ -83,7 +86,7 @@ resource "aws_lb" "app" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = data.aws_subnet_ids.default.ids
+  subnets            = data.aws_subnets.default.ids
 }
 
 resource "aws_lb_target_group" "app_tg" {
@@ -140,7 +143,7 @@ resource "aws_autoscaling_group" "app" {
     id      = aws_launch_template.app.id
     version = "$Latest"
   }
-  vpc_zone_identifier       = data.aws_subnet_ids.default.ids
+  vpc_zone_identifier       = data.aws_subnets.default.ids
   target_group_arns         = [aws_lb_target_group.app_tg.arn]
   health_check_type         = "ELB"
   health_check_grace_period = 300
