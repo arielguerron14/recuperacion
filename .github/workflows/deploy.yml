@@ -54,17 +54,17 @@ jobs:
           "
 
           # Copiar archivos a /tmp del host (sin permisos requeridos)
-          REMOTE_TMP="/tmp/deploy_\$RANDOM"
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "mkdir -p \$REMOTE_TMP"
+          REMOTE_TMP="/tmp/deploy_${{ github.run_id }}"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "mkdir -p $REMOTE_TMP"
 
           scp -o StrictHostKeyChecking=no -i ~/.ssh/key.pem -r ./* \
-            ${{ secrets.EC2_USER }}@$HOST:\$REMOTE_TMP
+            ${{ secrets.EC2_USER }}@$HOST:$REMOTE_TMP
 
           # Mover desde /tmp a la ruta final usando sudo, cambiar permisos e instalar/ejecutar
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "
-            sudo cp -r \$REMOTE_TMP/* ${{ secrets.EC2_PATH }}/
+            sudo cp -r /tmp/deploy_${{ github.run_id }}/* ${{ secrets.EC2_PATH }}/
             sudo chown -R ${{ secrets.EC2_USER }}:${{ secrets.EC2_USER }} ${{ secrets.EC2_PATH }}
-            rm -rf \$REMOTE_TMP
+            rm -rf /tmp/deploy_${{ github.run_id }}
 
             cd ${{ secrets.EC2_PATH }}
             npm install || true
