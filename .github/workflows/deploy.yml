@@ -47,53 +47,31 @@ jobs:
         for HOST in "${FILTERED[@]}"; do
           echo "----- 🚀 Deploying en $HOST -----"
 
+          # Preparar host: crear directorio con sudo e instalar Node
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "
             sudo mkdir -p ${{ secrets.EC2_PATH }}
             sudo yum install -y nodejs npm || true
           "
 
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/key.pem -r ./* \
-            ${{ secrets.EC2_USER }}@$HOST:${{ secrets.EC2_PATH }}
+          # Copiar archivos a /tmp del host (sin permisos requeridos)
+          REMOTE_TMP="/tmp/deploy_$RANDOM"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "mkdir -p $REMOTE_TMP"
 
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/key.pem -r ./* \
+            ${{ secrets.EC2_USER }}@$HOST:$REMOTE_TMP
+
+          # Mover desde /tmp a la ruta final usando sudo, cambiar permisos e instalar/ejecutar
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "
+            sudo cp -r $REMOTE_TMP/* ${{ secrets.EC2_PATH }}/
+            sudo chown -R ${{ secrets.EC2_USER }}:${{ secrets.EC2_USER }} ${{ secrets.EC2_PATH }}
+            rm -rf $REMOTE_TMP
+
             cd ${{ secrets.EC2_PATH }}
             npm install || true
             pm2 stop all || true
             pm2 start index.js || nohup node index.js >/dev/null 2>&1 &
           "
         done
-    - name: Deploy a múltiples EC2
-      run: |
-        set -e
-
-        HOSTS=(
-          "${{ secrets.EC2_HOST_1 }}"
-          "${{ secrets.EC2_HOST_2 }}"
-          "${{ secrets.EC2_HOST_3 }}"
-          "${{ secrets.EC2_HOST_4 }}"
-          "${{ secrets.EC2_HOST_5 }}"
-          "${{ secrets.EC2_HOST_6 }}"
-        )
-
-        FILTERED=()
-        for H in "${HOSTS[@]}"; do
-          if [ -n "$H" ]; then
-            FILTERED+=("$H")
-          fi
-        done
-
-        if [ ${#FILTERED[@]} -eq 0 ]; then
-          echo "No EC2_HOST_* secrets configured. Nothing to deploy."
-          exit 0
-        fi
-
-        for HOST in "${FILTERED[@]}"; do
-          echo "----- 🚀 Deploying en $HOST -----"
-
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "
-            sudo mkdir -p '${{ secrets.EC2_PATH }}'
-            sudo yum install -y nodejs npm || true
-          "
 
           scp -o StrictHostKeyChecking=no -i ~/.ssh/key.pem -r ./* \
             ${{ secrets.EC2_USER }}@$HOST:${{ secrets.EC2_PATH }}
@@ -119,32 +97,4 @@ jobs:
 
             # Instalar Node y PM2 si faltan
             sudo yum install -y nodejs npm || true
-            sudo npm install -g pm2 || true
 
-            sudo mkdir -p '${{ secrets.EC2_PATH }}'
-            sudo chown -R ${{ secrets.EC2_USER }}:${{ secrets.EC2_USER }} '${{ secrets.EC2_PATH }}'
-          "
-
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/key.pem -r ./* \
-            ${{ secrets.EC2_USER }}@$HOST:$REMOTE_TMP
-
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "
-            sudo cp -r $REMOTE_TMP/* '${{ secrets.EC2_PATH }}/'
-            rm -rf $REMOTE_TMP
-
-            cd '${{ secrets.EC2_PATH }}'
-
-            npm install || true
-
-            # Limpieza completa de PM2
-            pm2 stop all || true
-            pm2 delete all || true
-            pm2 save || true
-
-            # Iniciar solo 'hola'
-            pm2 start index.js --name hola
-
-            pm2 save
-            pm2 startup systemd -u ${{ secrets.EC2_USER }} --hp /home/${{ secrets.EC2_USER }}
-          "
-        done
