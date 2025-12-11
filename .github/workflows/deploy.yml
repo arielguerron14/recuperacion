@@ -24,6 +24,49 @@ jobs:
         set -e
 
         HOSTS=(
+          ${{ secrets.EC2_HOST_1 }}
+          ${{ secrets.EC2_HOST_2 }}
+          ${{ secrets.EC2_HOST_3 }}
+          ${{ secrets.EC2_HOST_4 }}
+          ${{ secrets.EC2_HOST_5 }}
+          ${{ secrets.EC2_HOST_6 }}
+        )
+
+        FILTERED=()
+        for H in "${HOSTS[@]}"; do
+          if [ -n "$H" ]; then
+            FILTERED+=("$H")
+          fi
+        done
+
+        if [ ${#FILTERED[@]} -eq 0 ]; then
+          echo "No EC2_HOST_* secrets configured. Nothing to deploy."
+          exit 0
+        fi
+
+        for HOST in "${FILTERED[@]}"; do
+          echo "----- 🚀 Deploying en $HOST -----"
+
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "
+            sudo mkdir -p ${{ secrets.EC2_PATH }}
+            sudo yum install -y nodejs npm || true
+          "
+
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/key.pem -r ./* \
+            ${{ secrets.EC2_USER }}@$HOST:${{ secrets.EC2_PATH }}
+
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "
+            cd ${{ secrets.EC2_PATH }}
+            npm install || true
+            pm2 stop all || true
+            pm2 start index.js || nohup node index.js >/dev/null 2>&1 &
+          "
+        done
+    - name: Deploy a múltiples EC2
+      run: |
+        set -e
+
+        HOSTS=(
           "${{ secrets.EC2_HOST_1 }}"
           "${{ secrets.EC2_HOST_2 }}"
           "${{ secrets.EC2_HOST_3 }}"
@@ -40,6 +83,28 @@ jobs:
         done
 
         if [ ${#FILTERED[@]} -eq 0 ]; then
+          echo "No EC2_HOST_* secrets configured. Nothing to deploy."
+          exit 0
+        fi
+
+        for HOST in "${FILTERED[@]}"; do
+          echo "----- 🚀 Deploying en $HOST -----"
+
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "
+            sudo mkdir -p '${{ secrets.EC2_PATH }}'
+            sudo yum install -y nodejs npm || true
+          "
+
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/key.pem -r ./* \
+            ${{ secrets.EC2_USER }}@$HOST:${{ secrets.EC2_PATH }}
+
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "
+            cd '${{ secrets.EC2_PATH }}'
+            npm install || true
+            pm2 stop all || true
+            pm2 start index.js || nohup node index.js >/dev/null 2>&1 &
+          "
+        done
           echo "No EC2_HOST_* secrets configured. Nothing to deploy."
           exit 0
         fi
