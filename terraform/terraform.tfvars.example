@@ -1,0 +1,42 @@
+# ============================================================================
+# TERRAFORM VARIABLES VALUES EXAMPLE
+# ============================================================================
+# Copy this file to terraform.tfvars and modify the values as needed
+# Terraform will automatically load variables from terraform.tfvars
+# ============================================================================
+
+# Region where resources will be deployed
+region = "us-east-1"
+
+# Application name (used for naming resources)
+app_name = "hola-mundo"
+
+# VPC CIDR block
+vpc_cidr = "10.0.0.0/16"
+
+# Public subnet CIDR blocks (one per AZ)
+public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+
+# Availability zones
+availability_zones = ["us-east-1a", "us-east-1b", "us-east-1c"]
+
+# EC2 instance type
+instance_type = "t3.micro"
+
+# Auto Scaling Group settings
+asg_min_size         = 2
+asg_max_size         = 6
+asg_desired_capacity = 2
+
+# Docker container port (exposed on host port 80)
+container_port = 3000
+
+# GitHub repository URL
+github_repo_url = "https://github.com/arielguerron14/recuperacion.git"
+
+# Common tags for all resources
+common_tags = {
+  Environment = "production"
+  Terraform   = "true"
+  Project     = "hola-mundo-docker"
+}
