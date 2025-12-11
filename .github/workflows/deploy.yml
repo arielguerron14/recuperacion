@@ -51,10 +51,18 @@ jobs:
             sudo mkdir -p '${{ secrets.EC2_PATH }}' && sudo yum install -y nodejs npm || true
           "
 
+          # Copy to a temp location first (avoids permission issues), then move with sudo
+          REMOTE_TMP="/tmp/deploy_${{ github.run_id }}"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "mkdir -p $REMOTE_TMP && rm -rf $REMOTE_TMP/*"
+
           scp -o StrictHostKeyChecking=no -i ~/.ssh/key.pem -r ./* \
-            ${{ secrets.EC2_USER }}@$HOST:${{ secrets.EC2_PATH }}
+            ${{ secrets.EC2_USER }}@$HOST:$REMOTE_TMP
 
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "
+            sudo mkdir -p '${{ secrets.EC2_PATH }}'
+            sudo cp -r $REMOTE_TMP/. '${{ secrets.EC2_PATH }}/'
+            sudo chown -R ${{ secrets.EC2_USER }}:${{ secrets.EC2_USER }} '${{ secrets.EC2_PATH }}'
+            rm -rf $REMOTE_TMP
             cd '${{ secrets.EC2_PATH }}'
             npm install || true
             pm2 stop all || true
