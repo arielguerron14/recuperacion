@@ -32,13 +32,13 @@ variable "subnet_ids" {
 variable "ec2_sg_id" {
   description = "Security Group ID for EC2 instances (AWS Academy: existing SG)"
   type        = string
-  default     = "sg-0xxxxxxxx"
+  default     = "sg-000487d4bbef1ba0b"
 }
 
 variable "tg_arn" {
   description = "Target Group ARN for ALB (AWS Academy: existing ALB target group)"
   type        = string
-  default     = "arn:aws:elasticloadbalancing:us-east-1:ACCOUNT_ID:targetgroup/TGNAME/TGID"
+  default     = "arn:aws:elasticloadbalancing:us-east-1:533267090491:targetgroup/hola-tg/ed19b35e8d07a549"
 }
 
 variable "min_size" {
