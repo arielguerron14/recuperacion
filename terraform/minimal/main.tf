@@ -157,44 +157,6 @@ resource "aws_lb_listener" "hola" {
 }
 
 ##########################
-# Launch Configuration (minimal, based on EC2 instance)
-##########################
-
-resource "aws_launch_configuration" "hola" {
-  image_id        = var.ami_id
-  instance_type   = var.instance_type
-  security_groups = [aws_security_group.ec2_sg.id]
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-##########################
-# Auto Scaling Group
-##########################
-
-resource "aws_autoscaling_group" "hola" {
-  name                 = "hola-asg"
-  launch_configuration = aws_launch_configuration.hola.id
-  vpc_zone_identifier  = data.aws_subnets.default_public.ids
-  min_size             = 1
-  max_size             = 1
-  desired_capacity     = 1
-  target_group_arns    = [aws_lb_target_group.hola.arn]
-
-  tag {
-    key                 = "Name"
-    value               = "hola-asg-instance"
-    propagate_at_launch = true
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-##########################
 # Outputs
 ##########################
 
@@ -216,9 +178,4 @@ output "instance_id" {
 output "instance_public_ip" {
   description = "Public IP of the EC2 instance"
   value       = aws_instance.hola.public_ip
-}
-
-output "asg_name" {
-  description = "Name of the Auto Scaling Group"
-  value       = aws_autoscaling_group.hola.name
 }
