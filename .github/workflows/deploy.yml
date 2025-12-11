@@ -47,18 +47,21 @@ jobs:
         for HOST in "${FILTERED[@]}"; do
           echo "----- 🚀 Deploying en $HOST -----"
 
+          # Crear directorio, instalar Node.js y PM2 si no existe
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "
             sudo mkdir -p ${{ secrets.EC2_PATH }}
             sudo yum install -y nodejs npm || true
             sudo npm install -g pm2 || true
           "
 
+          # Copiar archivos al host temporalmente
           REMOTE_TMP="/tmp/deploy_${{ github.run_id }}"
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "mkdir -p $REMOTE_TMP"
 
           scp -o StrictHostKeyChecking=no -i ~/.ssh/key.pem -r ./* \
             ${{ secrets.EC2_USER }}@$HOST:$REMOTE_TMP
 
+          # Mover archivos, instalar dependencias y ejecutar con PM2 en puerto 3000
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/key.pem ${{ secrets.EC2_USER }}@$HOST "
             sudo cp -r $REMOTE_TMP/* ${{ secrets.EC2_PATH }}/
             sudo chown -R ${{ secrets.EC2_USER }}:${{ secrets.EC2_USER }} ${{ secrets.EC2_PATH }}
@@ -69,9 +72,9 @@ jobs:
 
             pm2 stop hola || true
             pm2 delete hola || true
-            pm2 start index.js --name hola
+            PORT=3000 pm2 start index.js --name hola
 
             pm2 save
-            pm2 startup systemd -u ${{ secrets.EC2_USER }} --hp /home/${{ secrets.EC2_USER }}
+            pm2 startup systemd -u ${{ secrets.EC2_USER }} --hp /home/${{ secrets.EC2_USER }} || true
           "
         done
