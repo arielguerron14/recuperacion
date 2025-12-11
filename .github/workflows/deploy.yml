@@ -30,7 +30,8 @@ jobs:
 
     - name: Terraform Apply
       run: |
-        terraform apply -auto-approve -var "repo_url=https://github.com/${{ github.repository }}.git"
+        terraform apply -auto-approve \
+          -var="repo_url=https://github.com/${{ github.repository }}.git"
       working-directory: terraform
 
     - name: Show ALB DNS

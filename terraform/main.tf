@@ -12,30 +12,11 @@ provider "aws" {
   region = var.region
 }
 
-data "aws_vpc" "default" {
-  default = true
-}
-
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
-}
-
-data "aws_ami" "amazon_linux" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
-  }
-}
+# Using hardcoded IDs instead of data sources (AWS Academy blocks data sources)
 
 resource "aws_security_group" "alb_sg" {
   name   = "hola-alb-sg"
-  vpc_id = data.aws_vpc.default.id
+  vpc_id = var.vpc_id
 
   ingress {
     description = "HTTP"
@@ -55,7 +36,7 @@ resource "aws_security_group" "alb_sg" {
 
 resource "aws_security_group" "ec2_sg" {
   name   = "hola-ec2-sg"
-  vpc_id = data.aws_vpc.default.id
+  vpc_id = var.vpc_id
 
   ingress {
     description = "HTTP"
@@ -86,14 +67,14 @@ resource "aws_lb" "app" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = data.aws_subnets.default.ids
+  subnets            = var.subnet_ids
 }
 
 resource "aws_lb_target_group" "app_tg" {
   name     = "hola-tg"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = data.aws_vpc.default.id
+  vpc_id   = var.vpc_id
 
   health_check {
     path                = "/"
@@ -119,7 +100,7 @@ resource "aws_lb_listener" "http" {
 
 resource "aws_launch_template" "app" {
   name_prefix   = "hola-lt-"
-  image_id      = data.aws_ami.amazon_linux.id
+  image_id      = var.ami_id
   instance_type = var.instance_type
 
   network_interfaces {
@@ -147,7 +128,7 @@ resource "aws_autoscaling_group" "app" {
     id      = aws_launch_template.app.id
     version = "$Latest"
   }
-  vpc_zone_identifier       = data.aws_subnets.default.ids
+  vpc_zone_identifier       = var.subnet_ids
   target_group_arns         = [aws_lb_target_group.app_tg.arn]
   health_check_type         = "ELB"
   health_check_grace_period = 300
