@@ -1,6 +1,7 @@
 const http = require("http");
 
-const PORT = process.env.PORT || 80;
+// Cambiado a 3000 para evitar error EACCES
+const PORT = process.env.PORT || 3000;
 
 const server = http.createServer((req, res) => {
   res.end("Hola Mundo desplegado en múltiples instancias EC2!");
