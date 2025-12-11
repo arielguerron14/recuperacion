@@ -13,7 +13,12 @@ output "launch_template_latest_version" {
   value       = aws_launch_template.app.latest_version
 }
 
-# Note: Instance IDs and public IPs are created dynamically by ASG.
-# To retrieve them, use:
-# aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names hola-asg --query 'AutoScalingGroups[0].Instances[*].[InstanceId]'
-# aws ec2 describe-instances --instance-ids <instance-id> --query 'Reservations[0].Instances[*].[InstanceId,PublicIpAddress]'
+output "instance_ids" {
+  description = "IDs of instances launched by the ASG"
+  value       = data.aws_instances.asg_instances.ids
+}
+
+output "public_ips" {
+  description = "Public IP addresses of instances"
+  value       = data.aws_instances.asg_instances.public_ips
+}

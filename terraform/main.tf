@@ -65,3 +65,13 @@ resource "aws_autoscaling_group" "app" {
     create_before_destroy = true
   }
 }
+
+# Data source to get instance IPs from ASG
+data "aws_instances" "asg_instances" {
+  filter {
+    name   = "tag:Name"
+    values = ["hola-instance"]
+  }
+
+  depends_on = [aws_autoscaling_group.app]
+}
